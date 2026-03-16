@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Folia — Interactive Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+/* ── PAGE ── */
+body{
+  background:#0a0a0b;
+  font-family:'DM Mono',monospace;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:32px 20px 60px;
+  overflow-x:hidden;
+}
+
+/* grain overlay */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9999;
+}
+
+/* ── HEADER ── */
+.hdr{text-align:center;margin-bottom:20px;}
+.hdr-brand{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:300;color:#e8e8f0;line-height:1;}
+.hdr-brand em{color:#4ec98a;font-style:italic;}
+.hdr-tag{font-size:9px;color:#5a5a6e;letter-spacing:.2em;text-transform:uppercase;margin-top:4px;}
+.hdr-screen{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#e8e8f0;margin-top:12px;}
+.hdr-desc{font-size:9px;color:#5a5a6e;margin-top:3px;min-height:14px;}
+
+/* ── DOTS ── */
+.dots{display:flex;gap:5px;justify-content:center;margin:10px 0 0;flex-wrap:wrap;}
+.dot{width:7px;height:7px;border-radius:50%;background:#2a2a35;cursor:pointer;transition:background .2s,transform .2s;border:none;padding:0;}
+.dot.on{background:#4ec98a;transform:scale(1.3);}
+
+/* ── PHONE ── */
+.phone{
+  width:320px;height:660px;
+  background:#0d0d10;
+  border-radius:52px;
+  border:1.5px solid #252530;
+  position:relative;
+  overflow:hidden;
+  margin-top:20px;
+  box-shadow:
+    0 0 0 6px #0a0a0b,
+    0 0 0 7.5px #1e1e28,
+    0 0 60px rgba(0,0,0,.9),
+    inset 0 1px 0 rgba(255,255,255,.05);
+  flex-shrink:0;
+}
+/* notch */
+.phone::before{
+  content:'';position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  width:96px;height:28px;background:#0a0a0b;border-radius:20px;z-index:100;
+  border:1px solid #1e1e26;
+}
+
+/* ── SCREENS ── */
+.scr{
+  display:none;
+  position:absolute;inset:0;
+  flex-direction:column;
+  border-radius:52px;
+  overflow:hidden;
+  background:#0d0d10;
+}
+.scr.on{display:flex;}
+
+/* ── STATUS BAR ── */
+.sb{display:flex;justify-content:space-between;align-items:center;padding:18px 22px 0;flex-shrink:0;height:50px;}
+.sb-time{font-size:12px;font-weight:600;color:#e8e8f0;}
+.sb-right{font-size:11px;color:#9090a8;}
+
+/* ── NAV BAR ── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 10px;flex-shrink:0;}
+.nav-back{font-size:11px;color:#4ec98a;cursor:pointer;padding:6px 4px;}
+.nav-title{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;color:#e8e8f0;}
+.nav-acts{display:flex;gap:14px;align-items:center;}
+.nav-act{font-size:15px;color:#9090a8;cursor:pointer;padding:4px;}
+
+/* ── TAB BAR ── */
+.tab-bar{
+  position:absolute;bottom:0;left:0;right:0;height:76px;
+  background:rgba(10,10,11,.97);
+  border-top:1px solid #2a2a35;
+  display:flex;align-items:center;justify-content:space-around;
+  padding:0 4px 14px;z-index:50;
+  backdrop-filter:blur(20px);
+}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 14px;border-radius:10px;}
+.tab-ico{font-size:18px;line-height:1;}
+.tab-lbl{font-size:8px;color:#5a5a6e;letter-spacing:.05em;}
+.tab.on .tab-lbl{color:#4ec98a;}
+.tab-pip{width:4px;height:4px;border-radius:50%;background:#4ec98a;margin-top:-1px;}
+
+/* ── SCROLLABLE BODY ── */
+.body{flex:1;overflow:hidden;display:flex;flex-direction:column;padding-bottom:76px;}
+.body.no-tabs{padding-bottom:0;}
+
+/* ── CARDS ── */
+.card{background:#111114;border:1px solid #2a2a35;border-radius:16px;padding:13px 15px;position:relative;overflow:hidden;}
+.card-bar{position:absolute;left:0;top:0;bottom:0;width:3px;}
+.card-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:#e8e8f0;margin-bottom:3px;}
+.card-preview{font-size:9px;color:#5a5a6e;line-height:1.7;}
+.card-foot{display:flex;gap:7px;align-items:center;margin-top:8px;}
+.tag{font-size:8px;padding:2px 7px;border-radius:8px;}
+.tag-blue{color:#5c8fe0;background:rgba(92,143,224,.1);border:1px solid rgba(92,143,224,.2);}
+.tag-green{color:#4ec98a;background:rgba(78,201,138,.1);border:1px solid rgba(78,201,138,.25);}
+.tag-purple{color:#9b7fe0;background:rgba(155,127,224,.1);border:1px solid rgba(155,127,224,.2);}
+.tag-amber{color:#c8a96e;background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.2);}
+.t-ago{font-size:8px;color:#5a5a6e;margin-left:auto;}
+
+/* ── SEARCH BAR ── */
+.search-box{margin:0 16px 10px;background:#18181d;border:1px solid #2a2a35;border-radius:13px;padding:10px 14px;display:flex;align-items:center;gap:9px;cursor:text;flex-shrink:0;}
+.search-box.active{border-color:rgba(78,201,138,.5);}
+.search-ph{font-size:11px;color:#5a5a6e;}
+.search-val{font-size:11px;color:#e8e8f0;}
+
+/* ── FAB ── */
+.fab{position:absolute;right:20px;bottom:88px;width:52px;height:52px;border-radius:50%;background:#4ec98a;display:flex;align-items:center;justify-content:center;font-size:24px;color:#000;cursor:pointer;box-shadow:0 8px 24px rgba(78,201,138,.4);z-index:40;font-weight:300;transition:transform .12s;}
+.fab:active{transform:scale(.92);}
+
+/* ── BTN ── */
+.btn-primary{width:100%;padding:14px;border-radius:15px;background:#4ec98a;color:#000;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;text-align:center;cursor:pointer;box-shadow:0 8px 24px rgba(78,201,138,.35);user-select:none;transition:transform .12s,box-shadow .12s;}
+.btn-primary:active{transform:scale(.97);box-shadow:0 4px 12px rgba(78,201,138,.2);}
+.btn-ghost{width:100%;padding:12px;border-radius:15px;background:transparent;border:1px solid #2a2a35;color:#9090a8;font-family:'DM Mono',monospace;font-size:11px;text-align:center;cursor:pointer;user-select:none;}
+
+/* ── TOGGLE ── */
+.tog{width:38px;height:22px;border-radius:11px;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;}
+.tog.on{background:#4ec98a;}
+.tog.off{background:#1f1f26;border:1px solid #363642;}
+.tog-k{position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.4);}
+.tog.on .tog-k{left:19px;}
+.tog.off .tog-k{left:3px;}
+
+/* ── SECTION LABEL ── */
+.sec-lbl{font-size:9px;color:#5a5a6e;letter-spacing:.15em;text-transform:uppercase;padding:6px 20px 4px;flex-shrink:0;}
+
+/* ── DIVIDER ── */
+.div{height:1px;background:#2a2a35;margin:0 18px 10px;flex-shrink:0;}
+
+/* ── CURSOR ── */
+.cur{display:inline-block;width:1.5px;height:10px;background:#4ec98a;animation:blink 1s step-end infinite;vertical-align:text-bottom;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── FOOTER INFO ── */
+.page-footer{margin-top:16px;font-size:8px;color:#5a5a6e;letter-spacing:.1em;text-align:center;line-height:2;}
+.page-footer span{color:#4ec98a;}
+</style>
+</head>
+<body>
+
+<!-- ── PAGE HEADER ── -->
+<div class="hdr">
+  <div class="hdr-brand"><em>Folia</em></div>
+  <div class="hdr-tag">Interactive Prototype &nbsp;·&nbsp; BlueBroTech, LLC</div>
+  <div class="hdr-screen" id="scr-name">Lock Screen</div>
+  <div class="hdr-desc" id="scr-desc">Face ID gate — shown on app launch</div>
+</div>
+
+<!-- ── DOT NAV ── -->
+<div class="dots" id="dots"></div>
+
+<!-- ── PHONE ── -->
+<div class="phone" id="phone">
+
+<!-- ▸▸▸ SCREEN: LOCK ◂◂◂ -->
+<div class="scr" id="s-lock" data-name="Lock Screen" data-desc="Face ID gate — shown on app launch">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(92,143,224,.07) 0%,transparent 65%);pointer-events:none;"></div>
+  <div class="sb" style="opacity:.4;position:relative;z-index:2;"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;position:relative;z-index:2;">
+    <div style="font-size:38px;">🔒</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:#e8e8f0;"><em style="color:#4ec98a;font-style:italic;">Folia</em> is locked</div>
+    <div style="font-size:10px;color:#5a5a6e;">Use Face ID to unlock your notes</div>
+    <div data-goto="s-ob1" style="width:64px;height:64px;border-radius:50%;background:#111114;border:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5);transition:transform .12s;" onmousedown="this.style.transform='scale(.92)'" onmouseup="this.style.transform=''">👤</div>
+    <div data-goto="s-ob1" style="font-size:10px;color:#5c8fe0;cursor:pointer;">Use Passcode instead</div>
+  </div>
+  <div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:#111114;border:1px solid #2a2a35;border-radius:20px;padding:6px 14px;">
+    <div style="width:5px;height:5px;border-radius:50%;background:#4ec98a;"></div>
+    <div style="font-size:7px;color:#5a5a6e;letter-spacing:.1em;white-space:nowrap;">AES-256 ENCRYPTED · ZERO DATA MINING</div>
+  </div>
+</div>
+
+<!-- ▸▸▸ SCREEN: ONBOARDING 1 — WELCOME ◂◂◂ -->
+<div class="scr" id="s-ob1" data-name="Onboarding — Welcome" data-desc="Brand moment on first launch">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(78,201,138,.12) 0%,transparent 65%);pointer-events:none;"></div>
+  <div class="sb" style="position:relative;z-index:2;"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <!-- pixel leaf -->
+  <div style="display:flex;justify-content:center;padding:22px 0 10px;position:relative;z-index:2;flex-shrink:0;">
+    <svg width="90" height="124" viewBox="0 0 12 18" style="image-rendering:pixelated;" fill="none">
+      <rect x="6" y="0" width="1" height="1" fill="#5cb8d0"/><rect x="5" y="1" width="1" height="1" fill="#5cb8d0"/><rect x="6" y="1" width="1" height="1" fill="#4ec98a"/><rect x="7" y="1" width="1" height="1" fill="#5cb8d0"/><rect x="4" y="2" width="1" height="1" fill="#2a6a80"/><rect x="5" y="2" width="1" height="1" fill="#2a7a52"/><rect x="6" y="2" width="1" height="1" fill="#7edba8"/><rect x="7" y="2" width="1" height="1" fill="#4ec98a"/><rect x="8" y="2" width="1" height="1" fill="#5cb8d0"/><rect x="3" y="3" width="1" height="1" fill="#2a6a80"/><rect x="4" y="3" width="1" height="1" fill="#1a4a2e"/><rect x="5" y="3" width="1" height="1" fill="#4ec98a"/><rect x="6" y="3" width="1" height="1" fill="#c8a96e"/><rect x="7" y="3" width="1" height="1" fill="#7edba8"/><rect x="8" y="3" width="1" height="1" fill="#4ec98a"/><rect x="9" y="3" width="1" height="1" fill="#5cb8d0"/><rect x="2" y="4" width="1" height="1" fill="#2a6a80"/><rect x="3" y="4" width="1" height="1" fill="#1a4a2e"/><rect x="4" y="4" width="1" height="1" fill="#2a7a52"/><rect x="5" y="4" width="1" height="1" fill="#4ec98a"/><rect x="6" y="4" width="1" height="1" fill="#c8a96e"/><rect x="7" y="4" width="1" height="1" fill="#4ec98a"/><rect x="8" y="4" width="1" height="1" fill="#7edba8"/><rect x="9" y="4" width="1" height="1" fill="#4ec98a"/><rect x="10" y="4" width="1" height="1" fill="#5cb8d0"/><rect x="1" y="5" width="1" height="1" fill="#2a6a80"/><rect x="2" y="5" width="1" height="1" fill="#1a4a2e"/><rect x="3" y="5" width="1" height="1" fill="#2a7a52"/><rect x="4" y="5" width="1" height="1" fill="#4ec98a"/><rect x="5" y="5" width="1" height="1" fill="#7edba8"/><rect x="6" y="5" width="1" height="1" fill="#c8a96e"/><rect x="7" y="5" width="1" height="1" fill="#4ec98a"/><rect x="8" y="5" width="1" height="1" fill="#4ec98a"/><rect x="9" y="5" width="1" height="1" fill="#4ec98a"/><rect x="10" y="5" width="1" height="1" fill="#2a7a52"/><rect x="11" y="5" width="1" height="1" fill="#2a6a80"/><rect x="0" y="6" width="1" height="1" fill="#2a6a80"/><rect x="1" y="6" width="1" height="1" fill="#1a4a2e"/><rect x="2" y="6" width="1" height="1" fill="#2a7a52"/><rect x="3" y="6" width="1" height="1" fill="#4ec98a"/><rect x="4" y="6" width="1" height="1" fill="#7edba8"/><rect x="5" y="6" width="1" height="1" fill="#4ec98a"/><rect x="6" y="6" width="1" height="1" fill="#c8a96e"/><rect x="7" y="6" width="1" height="1" fill="#4ec98a"/><rect x="8" y="6" width="1" height="1" fill="#7edba8"/><rect x="9" y="6" width="1" height="1" fill="#4ec98a"/><rect x="10" y="6" width="1" height="1" fill="#1a4a2e"/><rect x="1" y="7" width="1" height="1" fill="#1a4a2e"/><rect x="2" y="7" width="1" height="1" fill="#2a7a52"/><rect x="3" y="7" width="1" height="1" fill="#4ec98a"/><rect x="4" y="7" width="1" height="1" fill="#7edba8"/><rect x="5" y="7" width="1" height="1" fill="#4ec98a"/><rect x="6" y="7" width="1" height="1" fill="#c8a96e"/><rect x="7" y="7" width="1" height="1" fill="#7edba8"/><rect x="8" y="7" width="1" height="1" fill="#4ec98a"/><rect x="9" y="7" width="1" height="1" fill="#2a7a52"/><rect x="10" y="7" width="1" height="1" fill="#1a4a2e"/><rect x="2" y="8" width="1" height="1" fill="#1a4a2e"/><rect x="3" y="8" width="1" height="1" fill="#2a7a52"/><rect x="4" y="8" width="1" height="1" fill="#4ec98a"/><rect x="5" y="8" width="1" height="1" fill="#7edba8"/><rect x="6" y="8" width="1" height="1" fill="#c8a96e"/><rect x="7" y="8" width="1" height="1" fill="#4ec98a"/><rect x="8" y="8" width="1" height="1" fill="#7edba8"/><rect x="9" y="8" width="1" height="1" fill="#4ec98a"/><rect x="10" y="8" width="1" height="1" fill="#1a4a2e"/><rect x="3" y="9" width="1" height="1" fill="#1a4a2e"/><rect x="4" y="9" width="1" height="1" fill="#2a7a52"/><rect x="5" y="9" width="1" height="1" fill="#4ec98a"/><rect x="6" y="9" width="1" height="1" fill="#c8a96e"/><rect x="7" y="9" width="1" height="1" fill="#7edba8"/><rect x="8" y="9" width="1" height="1" fill="#4ec98a"/><rect x="9" y="9" width="1" height="1" fill="#2a7a52"/><rect x="4" y="10" width="1" height="1" fill="#1a4a2e"/><rect x="5" y="10" width="1" height="1" fill="#2a7a52"/><rect x="6" y="10" width="1" height="1" fill="#c8a96e"/><rect x="7" y="10" width="1" height="1" fill="#4ec98a"/><rect x="8" y="10" width="1" height="1" fill="#2a7a52"/><rect x="5" y="11" width="1" height="1" fill="#2a6a80"/><rect x="6" y="11" width="1" height="1" fill="#c8a96e"/><rect x="7" y="11" width="1" height="1" fill="#2a7a52"/><rect x="6" y="12" width="1" height="1" fill="#c8a96e"/><rect x="5" y="13" width="1" height="1" fill="#c8a96e"/><rect x="6" y="13" width="1" height="1" fill="#1a4a2e"/><rect x="4" y="14" width="1" height="1" fill="#c8a96e"/><rect x="5" y="14" width="1" height="1" fill="#1a4a2e"/><rect x="3" y="15" width="1" height="1" fill="#c8a96e"/><rect x="4" y="15" width="1" height="1" fill="#1a4a2e"/><rect x="2" y="16" width="1" height="1" fill="#c8a96e"/><rect x="3" y="16" width="1" height="1" fill="#1a4a2e"/><rect x="1" y="17" width="1" height="1" fill="#c8a96e"/>
+    </svg>
+  </div>
+  <!-- content -->
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:0 26px 26px;text-align:center;position:relative;z-index:2;">
+    <!-- step dots -->
+    <div style="display:flex;gap:6px;margin-bottom:18px;">
+      <div style="width:22px;height:7px;border-radius:4px;background:#4ec98a;"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:#2a2a35;"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:#2a2a35;"></div>
+    </div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:#e8e8f0;margin-bottom:10px;line-height:1.2;">Welcome to <em style="color:#4ec98a;font-style:italic;">Folia</em></div>
+    <div style="font-size:10px;color:#5a5a6e;line-height:1.9;margin-bottom:28px;">The leaves of your mind.<br>A dark, deliberate space for every thought<br>you want to keep.</div>
+    <div class="btn-primary" data-goto="s-ob2" style="margin-bottom:12px;">Get Started →</div>
+    <div data-goto="s-home" style="font-size:10px;color:#5a5a6e;cursor:pointer;padding:6px;">Already have an account? Sign in</div>
+  </div>
+</div>
+
+<!-- ▸▸▸ SCREEN: ONBOARDING 2 — PRIVACY & SECURITY ◂◂◂ -->
+<div class="scr" id="s-ob2" data-name="Onboarding — Privacy &amp; Security" data-desc="Full privacy dashboard — required step before first use">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 20%,rgba(78,201,138,.07) 0%,transparent 60%);pointer-events:none;"></div>
+  <div class="sb" style="position:relative;z-index:2;"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding:0 16px 20px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none;position:relative;z-index:2;">
+    <!-- step dots + heading -->
+    <div style="text-align:center;padding:4px 0 2px;flex-shrink:0;">
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:12px;">
+        <div style="width:7px;height:7px;border-radius:50%;background:#2a2a35;"></div>
+        <div style="width:22px;height:7px;border-radius:4px;background:#4ec98a;"></div>
+        <div style="width:7px;height:7px;border-radius:50%;background:#2a2a35;"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:5px;">
+        <span style="font-size:20px;">🛡️</span>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:#e8e8f0;line-height:1.1;">Privacy <em style="color:#4ec98a;font-style:italic;">&amp; Security</em></div>
+      </div>
+      <div style="font-size:9px;color:#5a5a6e;line-height:1.8;">Before you write your first note — here's exactly<br>how Folia handles your data.</div>
+    </div>
+    <!-- promise card -->
+    <div style="background:linear-gradient(135deg,rgba(78,201,138,.09),rgba(78,201,138,.02));border:1px solid rgba(78,201,138,.3);border-radius:16px;padding:13px;flex-shrink:0;">
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#4ec98a;margin-bottom:5px;">Our Privacy Promise</div>
+      <div style="font-size:9px;color:#9090a8;line-height:1.85;">Your notes are yours. We never read them, sell them, or use them to train AI models. Zero data mining. Full stop.</div>
+    </div>
+    <!-- live status table -->
+    <div style="flex-shrink:0;">
+      <div style="font-size:9px;color:#5a5a6e;letter-spacing:.15em;text-transform:uppercase;margin-bottom:7px;">Live Status</div>
+      <div style="background:#111114;border:1px solid #2a2a35;border-radius:14px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(78,201,138,.1);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🔒</div>
+          <div style="flex:1;"><div style="font-size:11px;color:#e8e8f0;">Encryption</div><div style="font-size:8px;color:#5a5a6e;margin-top:1px;">AES-256 · Active on all notes</div></div>
+          <div style="font-size:8px;padding:2px 9px;border-radius:8px;color:#4ec98a;background:rgba(78,201,138,.1);border:1px solid rgba(78,201,138,.25);">ON</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(224,92,107,.08);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🚫</div>
+          <div style="flex:1;"><div style="font-size:11px;color:#e8e8f0;">Data Collection</div><div style="font-size:8px;color:#5a5a6e;margin-top:1px;">Analytics, ads, telemetry</div></div>
+          <div style="font-size:8px;padding:2px 9px;border-radius:8px;color:#e05c6b;background:rgba(224,92,107,.08);border:1px solid rgba(224,92,107,.2);">NONE</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(92,143,224,.1);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>
+          <div style="flex:1;"><div style="font-size:11px;color:#e8e8f0;">AI Processing</div><div style="font-size:8px;color:#5a5a6e;margin-top:1px;">On-device only · Never uploaded</div></div>
+          <div style="font-size:8px;padding:2px 9px;border-radius:8px;color:#5c8fe0;background:rgba(92,143,224,.1);border:1px solid rgba(92,143,224,.2);">LOCAL</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(224,92,107,.08);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📤</div>
+          <div style="flex:1;"><div style="font-size:11px;color:#e8e8f0;">Data Sold to Third Parties</div><div style="font-size:8px;color:#5a5a6e;margin-top:1px;">Under any circumstances</div></div>
+          <div style="font-size:8px;padding:2px 9px;border-radius:8px;color:#e05c6b;background:rgba(224,92,107,.08);border:1px solid rgba(224,92,107,.2);">NEVER</div>
+        </div>
+      </div>
+    </div>
+    <!-- 4 trust pillars -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;flex-shrink:0;">
+      <div style="background:#111114;border:1px solid #2a2a35;border-radius:12px;padding:10px 11px;">
+        <div style="font-size:14px;margin-bottom:5px;">🔐</div>
+        <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;color:#e8e8f0;margin-bottom:2px;">End-to-End<br>Encrypted</div>
+        <div style="font-size:8px;color:#5a5a6e;line-height:1.6;">Notes encrypted before leaving your device.</div>
+      </div>
+      <div style="background:#111114;border:1px solid #2a2a35;border-radius:12px;padding:10px 11px;">
+        <div style="font-size:14px;margin-bottom:5px;">🚫</div>
+        <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;color:#e8e8f0;margin-bottom:2px;">Zero<br>Data Mining</div>
+        <div style="font-size:8px;color:#5a5a6e;line-height:1.6;">We never read or analyze your content.</div>
+      </div>
+      <div style="background:#111114;border:1px solid #2a2a35;border-radius:12px;padding:10px 11px;">
+        <div style="font-size:14px;margin-bottom:5px;">📱</div>
+        <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;color:#e8e8f0;margin-bottom:2px;">On-Device<br>AI Only</div>
+        <div style="font-size:8px;color:#5a5a6e;line-height:1.6;">AI features never send data to a server.</div>
+      </div>
+      <div style="background:#111114;border:1px solid #2a2a35;border-radius:12px;padding:10px 11px;">
+        <div style="font-size:14px;margin-bottom:5px;">🗑️</div>
+        <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;color:#e8e8f0;margin-bottom:2px;">Delete is<br>Delete</div>
+        <div style="font-size:8px;color:#5a5a6e;line-height:1.6;">Deleted data is gone. No backups retained.</div>
+      </div>
+    </div>
+    <!-- BlueBroTech micro-brand -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;">
+      <div style="width:20px;height:1px;background:#2a2a35;"></div>
+      <div style="font-size:8px;color:#2a2a35;letter-spacing:.12em;">BlueBroTech, LLC</div>
+      <div style="width:20px;height:1px;background:#2a2a35;"></div>
+    </div>
+    <!-- CTA -->
+    <div style="flex-shrink:0;">
+      <div class="btn-primary" data-goto="s-ob3" style="margin-bottom:10px;">I understand — Let's go ✦</div>
+      <div style="text-align:center;font-size:8px;color:#5a5a6e;line-height:1.8;">You can review this anytime in <span style="color:#4ec98a;">Settings → Privacy</span></div>
+    </div>
+  </div>
+</div>
+<!-- ▸▸▸ SCREEN: ONBOARDING 3 — PERSONALIZE ◂◂◂ -->
+<div class="scr" id="s-ob3" data-name="Onboarding — Personalize" data-desc="Writing style picker to tailor the experience">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 40% 30%,rgba(155,127,224,.07) 0%,transparent 60%);pointer-events:none;"></div>
+  <div class="sb" style="position:relative;z-index:2;"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <div style="flex:1;display:flex;flex-direction:column;padding:10px 22px 26px;position:relative;z-index:2;">
+    <div style="display:flex;gap:6px;justify-content:center;margin-bottom:16px;">
+      <div style="width:7px;height:7px;border-radius:50%;background:#2a2a35;"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:#2a2a35;"></div>
+      <div style="width:22px;height:7px;border-radius:4px;background:#4ec98a;"></div>
+    </div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:#e8e8f0;margin-bottom:6px;text-align:center;line-height:1.2;">What do you write <em style="color:#4ec98a;font-style:italic;">most?</em></div>
+    <div style="font-size:9px;color:#5a5a6e;text-align:center;margin-bottom:18px;">We'll tailor Folia to fit your flow.</div>
+    <div style="display:flex;flex-direction:column;gap:9px;flex:1;">
+      <div data-goto="s-home" style="background:rgba(78,201,138,.07);border:1px solid rgba(78,201,138,.3);border-radius:13px;padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;">
+        <span style="font-size:20px;">📓</span>
+        <div><div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:#4ec98a;margin-bottom:1px;">Journal / Diary</div><div style="font-size:8px;color:#5a5a6e;">Daily reflections & thoughts</div></div>
+        <div style="margin-left:auto;width:16px;height:16px;border-radius:50%;background:#4ec98a;display:flex;align-items:center;justify-content:center;font-size:9px;color:#000;font-weight:700;">✓</div>
+      </div>
+      <div data-goto="s-home" style="background:#111114;border:1px solid #2a2a35;border-radius:13px;padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;"><span style="font-size:20px;">💼</span><div><div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:#e8e8f0;margin-bottom:1px;">Work & Projects</div><div style="font-size:8px;color:#5a5a6e;">Meeting notes & strategies</div></div></div>
+      <div data-goto="s-home" style="background:#111114;border:1px solid #2a2a35;border-radius:13px;padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;"><span style="font-size:20px;">📚</span><div><div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:#e8e8f0;margin-bottom:1px;">Reading & Research</div><div style="font-size:8px;color:#5a5a6e;">Book notes & highlights</div></div></div>
+      <div data-goto="s-home" style="background:#111114;border:1px solid #2a2a35;border-radius:13px;padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;"><span style="font-size:20px;">✨</span><div><div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:#e8e8f0;margin-bottom:1px;">Creative Writing</div><div style="font-size:8px;color:#5a5a6e;">Stories, poems & free-form</div></div></div>
+    </div>
+    <div class="btn-primary" data-goto="s-home" style="margin-top:16px;">Start Writing →</div>
+  </div>
+</div>
+
+<!-- ▸▸▸ SCREEN: HOME FEED ◂◂◂ -->
+<div class="scr" id="s-home" data-name="Home Feed" data-desc="Notes list with tag filters, search and compose">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-right">☁ 🔋</span></div>
+  <!-- home header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 6px;flex-shrink:0;">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;color:#4ec98a;font-style:italic;line-height:1;">Folia</div>
+    <div data-goto="s-settings" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#4ec98a,#9b7fe0);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#000;cursor:pointer;">C</div>
+  </div>
+  <!-- search -->
+  <div class="search-box" data-goto="s-search">
+    <span style="font-size:13px;">🔍</span>
+    <span class="search-ph">Search notes...</span>
+  </div>
+  <!-- tag filters -->
+  <div style="display:flex;gap:7px;padding:0 16px 8px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;">
+    <div style="font-size:9px;padding:5px 12px;border-radius:20px;border:1px solid rgba(78,201,138,.4);color:#4ec98a;background:rgba(78,201,138,.08);white-space:nowrap;">All</div>
+    <div style="font-size:9px;padding:5px 12px;border-radius:20px;border:1px solid #2a2a35;color:#5a5a6e;white-space:nowrap;">Work</div>
+    <div style="font-size:9px;padding:5px 12px;border-radius:20px;border:1px solid #2a2a35;color:#5a5a6e;white-space:nowrap;">Ideas</div>
+    <div style="font-size:9px;padding:5px 12px;border-radius:20px;border:1px solid #2a2a35;color:#5a5a6e;white-space:nowrap;">Reading</div>
+    <div style="font-size:9px;padding:5px 12px;border-radius:20px;border:1px solid #2a2a35;color:#5a5a6e;white-space:nowrap;">Personal</div>
+  </div>
+  <!-- notes list -->
+  <div style="flex:1;padding:0 14px;display:flex;flex-direction:column;gap:9px;overflow:hidden;padding-bottom:80px;">
+    <div class="card" data-goto="s-detail" style="cursor:pointer;">
+      <div class="card-bar" style="background:#4ec98a;"></div>
+      <div class="card-title" style="padding-left:6px;">Product Strategy Q2 — Retention Hypothesis</div>
+      <div class="card-preview" style="padding-left:6px;">Retention beats acquisition in every scenario we've modeled. The data is unambiguous...</div>
+      <div class="card-foot" style="padding-left:6px;"><span class="tag tag-blue">work</span><span class="tag tag-blue">strategy</span><span class="t-ago">Today</span></div>
+    </div>
+    <div class="card" data-goto="s-detail" style="cursor:pointer;">
+      <div class="card-bar" style="background:#5c8fe0;"></div>
+      <div class="card-title" style="padding-left:6px;">Atomic Habits — Key Takeaways</div>
+      <div class="card-preview" style="padding-left:6px;">1% better every day compounds to 37× better over a year. Systems beat goals every time...</div>
+      <div class="card-foot" style="padding-left:6px;"><span class="tag tag-purple">reading</span><span class="t-ago">Yesterday</span></div>
+    </div>
+    <div class="card" data-goto="s-detail" style="cursor:pointer;">
+      <div class="card-bar" style="background:#9b7fe0;"></div>
+      <div class="card-title" style="padding-left:6px;">Folia Feature Brainstorm</div>
+      <div class="card-preview" style="padding-left:6px;">What if AI could auto-link related notes? Knowledge graph view could be massive...</div>
+      <div class="card-foot" style="padding-left:6px;"><span class="tag tag-green">ideas</span><span class="t-ago">Mar 11</span></div>
+    </div>
+    <div class="card" data-goto="s-detail" style="cursor:pointer;">
+      <div class="card-bar" style="background:#c8a96e;"></div>
+      <div class="card-title" style="padding-left:6px;">Weekly Reflection — Week 10</div>
+      <div class="card-preview" style="padding-left:6px;">Momentum is building. The habit stack is working. Three things that moved forward...</div>
+      <div class="card-foot" style="padding-left:6px;"><span class="tag tag-amber">personal</span><span class="t-ago">Mar 10</span></div>
+    </div>
+  </div>
+  <div class="fab" data-goto="s-detail">+</div>
+  <!-- tab bar -->
+  <div class="tab-bar">
+    <div class="tab on" data-goto="s-home"><div class="tab-ico">🍃</div><div class="tab-lbl" style="color:#4ec98a;">Notes</div><div class="tab-pip"></div></div>
+    <div class="tab" data-goto="s-folders"><div class="tab-ico">🗂️</div><div class="tab-lbl">Folders</div></div>
+    <div class="tab" data-goto="s-search"><div class="tab-ico">🔍</div><div class="tab-lbl">Search</div></div>
+    <div class="tab" data-goto="s-settings"><div class="tab-ico">⚙️</div><div class="tab-lbl">Settings</div></div>
+  </div>
+</div>
+
+<!-- ▸▸▸ SCREEN: NOTE DETAIL ◂◂◂ -->
+<div class="scr" id="s-detail" data-name="Note Detail" data-desc="Markdown editor with stats, AI shortcut and toolbar">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <div class="nav">
+    <div class="nav-back" data-goto="s-home">← Notes</div>
+    <div class="nav-acts">
+      <div class="nav-act" data-goto="s-ai" style="color:#4ec98a;font-size:13px;">✦ AI</div>
+      <div class="nav-act">📤</div>
+      <div class="nav-act">⋯</div>
+    </div>
+  </div>
+  <!-- meta -->
+  <div style="display:flex;gap:7px;align-items:center;padding:0 20px 8px;flex-wrap:wrap;flex-shrink:0;">
+    <span style="font-size:9px;color:#5a5a6e;">Mar 13, 2026</span>
+    <div style="width:2px;height:2px;border-radius:50%;background:#5a5a6e;"></div>
+    <span class="tag tag-blue">work</span><span class="tag tag-blue">strategy</span>
+    <span style="font-size:9px;color:#5a5a6e;margin-left:auto;">342 words</span>
+  </div>
+  <!-- title -->
+  <div style="font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:300;color:#e8e8f0;padding:0 20px 10px;line-height:1.25;flex-shrink:0;">Product Strategy Q2 — The Retention Hypothesis</div>
+  <!-- stats row -->
+  <div style="display:flex;gap:14px;padding:0 20px 10px;flex-shrink:0;">
+    <div style="text-align:center;"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#4ec98a;">342</div><div style="font-size:8px;color:#5a5a6e;">words</div></div>
+    <div style="width:1px;height:28px;background:#2a2a35;align-self:center;"></div>
+    <div style="text-align:center;"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#4ec98a;">4</div><div style="font-size:8px;color:#5a5a6e;">sections</div></div>
+    <div style="width:1px;height:28px;background:#2a2a35;align-self:center;"></div>
+    <div style="text-align:center;"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#4ec98a;">~2m</div><div style="font-size:8px;color:#5a5a6e;">read</div></div>
+    <div style="width:1px;height:28px;background:#2a2a35;align-self:center;"></div>
+    <div style="text-align:center;"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#c8a96e;">⚡</div><div style="font-size:8px;color:#5a5a6e;">AI ready</div></div>
+  </div>
+  <div class="div"></div>
+  <!-- body -->
+  <div style="flex:1;padding:0 20px;font-size:10px;color:#9090a8;line-height:2;overflow:hidden;">
+    <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#e8e8f0;margin-bottom:5px;">Core Hypothesis</div>
+    <p>Retention beats acquisition. The <span style="color:#4ec98a;">1-year LTV</span> of retained users is <span style="color:#4ec98a;">3.4×</span> that of new ones in every model.</p>
+    <div style="border-left:2px solid #4ec98a;padding-left:10px;color:#5a5a6e;font-style:italic;margin:8px 0;font-size:9px;">"Build systems, not goals." — James Clear</div>
+    <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#e8e8f0;margin:8px 0 5px;">Key Metrics</div>
+    <p>Target <span style="background:#18181d;border:1px solid #2a2a35;border-radius:3px;padding:1px 5px;font-size:9px;color:#5ce0a0;">DAU/MAU > 0.4</span> as north star. Note creation rate above <span style="color:#4ec98a;">3 per week</span>.</p>
+    <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#e8e8f0;margin:8px 0 5px;">Action Items</div>
+    <p>Redesign onboarding streak. Add AI weekly recap. Knowledge graph view for Q3.<span class="cur"></span></p>
+  </div>
+  <!-- toolbar -->
+  <div style="height:42px;background:#111114;border-top:1px solid #2a2a35;display:flex;align-items:center;gap:5px;padding:0 12px;flex-shrink:0;">
+    <div style="padding:4px 8px;border-radius:7px;font-size:9px;color:#4ec98a;background:#18181d;border:1px solid rgba(78,201,138,.3);">**B**</div>
+    <div style="padding:4px 8px;border-radius:7px;font-size:9px;color:#9090a8;background:#18181d;border:1px solid #2a2a35;">_I_</div>
+    <div style="padding:4px 8px;border-radius:7px;font-size:9px;color:#9090a8;background:#18181d;border:1px solid #2a2a35;">H2</div>
+    <div style="padding:4px 8px;border-radius:7px;font-size:9px;color:#9090a8;background:#18181d;border:1px solid #2a2a35;">—</div>
+    <div style="padding:4px 8px;border-radius:7px;font-size:9px;color:#9090a8;background:#18181d;border:1px solid #2a2a35;">[ ]</div>
+    <div style="padding:4px 8px;border-radius:7px;font-size:9px;color:#9090a8;background:#18181d;border:1px solid #2a2a35;">🔗</div>
+    <div data-goto="s-gate" style="padding:4px 9px;border-radius:7px;font-size:9px;color:#4ec98a;background:rgba(78,201,138,.08);border:1px solid rgba(78,201,138,.25);cursor:pointer;margin-left:auto;">✦ AI</div>
+  </div>
+</div>
+
+<!-- ▸▸▸ SCREEN: SEARCH ◂◂◂ -->
+<div class="scr" id="s-search" data-name="Search" data-desc="Full-text search with highlighted match snippets">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <div class="nav"><div class="nav-title">Search</div></div>
+  <div class="search-box active" style="margin-bottom:6px;">
+    <span style="font-size:13px;">🔍</span>
+    <span class="search-val">retention</span>
+    <span data-goto="s-home" style="font-size:10px;color:#4ec98a;margin-left:auto;cursor:pointer;">✕</span>
+  </div>
+  <div class="sec-lbl">3 Results</div>
+  <div style="flex:1;padding:0 14px;display:flex;flex-direction:column;gap:8px;overflow:hidden;padding-bottom:80px;">
+    <div style="background:#111114;border:1px solid #2a2a35;border-radius:14px;padding:12px 14px;cursor:pointer;" data-goto="s-detail">
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#e8e8f0;margin-bottom:4px;">Product Strategy Q2</div>
+      <div style="font-size:9px;color:#5a5a6e;line-height:1.7;">...<mark style="background:rgba(78,201,138,.2);color:#4ec98a;border-radius:2px;">Retention</mark> beats acquisition in every scenario. The 1-year LTV of...</div>
+      <div style="display:flex;gap:7px;margin-top:6px;"><span class="tag tag-blue">work</span><span style="font-size:8px;color:#5a5a6e;margin-left:auto;">Today</span></div>
+    </div>
+    <div style="background:#111114;border:1px solid #2a2a35;border-radius:14px;padding:12px 14px;cursor:pointer;" data-goto="s-detail">
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#e8e8f0;margin-bottom:4px;">Folia Feature Brainstorm</div>
+      <div style="font-size:9px;color:#5a5a6e;line-height:1.7;">...user <mark style="background:rgba(78,201,138,.2);color:#4ec98a;border-radius:2px;">retention</mark> boosted with a streak system and weekly recap...</div>
+      <div style="display:flex;gap:7px;margin-top:6px;"><span class="tag tag-green">ideas</span><span style="font-size:8px;color:#5a5a6e;margin-left:auto;">Mar 11</span></div>
+    </div>
+    <div style="background:#111114;border:1px solid #2a2a35;border-radius:14px;padding:12px 14px;cursor:pointer;" data-goto="s-detail">
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#e8e8f0;margin-bottom:4px;">Atomic Habits</div>
+      <div style="font-size:9px;color:#5a5a6e;line-height:1.7;">...habit <mark style="background:rgba(78,201,138,.2);color:#4ec98a;border-radius:2px;">retention</mark> averages 66 days before automaticity kicks in...</div>
+      <div style="display:flex;gap:7px;margin-top:6px;"><span class="tag tag-purple">reading</span><span style="font-size:8px;color:#5a5a6e;margin-left:auto;">Yesterday</span></div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <div class="tab" data-goto="s-home"><div class="tab-ico">🍃</div><div class="tab-lbl">Notes</div></div>
+    <div class="tab" data-goto="s-folders"><div class="tab-ico">🗂️</div><div class="tab-lbl">Folders</div></div>
+    <div class="tab on" data-goto="s-search"><div class="tab-ico">🔍</div><div class="tab-lbl" style="color:#4ec98a;">Search</div><div class="tab-pip"></div></div>
+    <div class="tab" data-goto="s-settings"><div class="tab-ico">⚙️</div><div class="tab-lbl">Settings</div></div>
+  </div>
+</div>
+
+<!-- ▸▸▸ SCREEN: FOLDERS ◂◂◂ -->
+<div class="scr" id="s-folders" data-name="Folders" data-desc="Folder organization with note counts and color coding">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <div class="nav">
+    <div class="nav-title">Folders</div>
+    <div style="width:32px;height:32px;border-radius:10px;background:#4ec98a;display:flex;align-items:center;justify-content:center;font-size:18px;color:#000;box-shadow:0 4px 12px rgba(78,201,138,.35);cursor:pointer;">+</div>
+  </div>
+  <div class="sec-lbl">Pinned</div>
+  <div style="flex:1;padding:0 14px;display:flex;flex-direction:column;gap:7px;overflow:hidden;padding-bottom:80px;">
+    <div data-goto="s-home" style="background:rgba(78,201,138,.04);border:1px solid rgba(78,201,138,.25);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(78,201,138,.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🌿</div>
+      <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#4ec98a;margin-bottom:2px;">All Notes</div><div style="font-size:9px;color:#5a5a6e;">47 notes · updated today</div></div>
+      <div style="font-size:12px;color:#5a5a6e;">›</div>
+    </div>
+    <div class="sec-lbl" style="padding-left:0;">My Folders</div>
+    <div data-goto="s-home" style="background:#111114;border:1px solid #2a2a35;border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(92,143,224,.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">💼</div>
+      <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#e8e8f0;margin-bottom:2px;">Work</div><div style="font-size:9px;color:#5a5a6e;">12 notes · Mar 13</div></div>
+      <div style="font-size:9px;color:#5a5a6e;background:#1f1f26;padding:2px 8px;border-radius:8px;margin-right:4px;">12</div>
+      <div style="font-size:12px;color:#5a5a6e;">›</div>
+    </div>
+    <div data-goto="s-home" style="background:#111114;border:1px solid #2a2a35;border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(155,127,224,.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📚</div>
+      <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#e8e8f0;margin-bottom:2px;">Reading</div><div style="font-size:9px;color:#5a5a6e;">8 notes · Mar 10</div></div>
+      <div style="font-size:9px;color:#5a5a6e;background:#1f1f26;padding:2px 8px;border-radius:8px;margin-right:4px;">8</div>
+      <div style="font-size:12px;color:#5a5a6e;">›</div>
+    </div>
+    <div data-goto="s-home" style="background:#111114;border:1px solid #2a2a35;border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(200,169,110,.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">💡</div>
+      <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#e8e8f0;margin-bottom:2px;">Ideas</div><div style="font-size:9px;color:#5a5a6e;">15 notes · Mar 12</div></div>
+      <div style="font-size:9px;color:#5a5a6e;background:#1f1f26;padding:2px 8px;border-radius:8px;margin-right:4px;">15</div>
+      <div style="font-size:12px;color:#5a5a6e;">›</div>
+    </div>
+    <div data-goto="s-home" style="background:#111114;border:1px solid #2a2a35;border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(224,92,107,.1);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🔒</div>
+      <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#e8e8f0;margin-bottom:2px;">Private</div><div style="font-size:9px;color:#5a5a6e;">6 notes · locked</div></div>
+      <div style="font-size:12px;color:#5a5a6e;">›</div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <div class="tab" data-goto="s-home"><div class="tab-ico">🍃</div><div class="tab-lbl">Notes</div></div>
+    <div class="tab on" data-goto="s-folders"><div class="tab-ico">🗂️</div><div class="tab-lbl" style="color:#4ec98a;">Folders</div><div class="tab-pip"></div></div>
+    <div class="tab" data-goto="s-search"><div class="tab-ico">🔍</div><div class="tab-lbl">Search</div></div>
+    <div class="tab" data-goto="s-settings"><div class="tab-ico">⚙️</div><div class="tab-lbl">Settings</div></div>
+  </div>
+</div>
+
+<!-- ▸▸▸ SCREEN: SETTINGS ◂◂◂ -->
+<div class="scr" id="s-settings" data-name="Settings" data-desc="Account, appearance, AI toggles and privacy controls">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <div class="nav"><div class="nav-title">Settings</div></div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:0;padding-bottom:80px;">
+    <!-- profile -->
+    <div style="margin:0 14px 8px;background:#18181d;border:1px solid #2a2a35;border-radius:16px;padding:13px;display:flex;align-items:center;gap:11px;flex-shrink:0;">
+      <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#4ec98a,#9b7fe0);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#000;flex-shrink:0;">C</div>
+      <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:#e8e8f0;">CoolGuy33</div><div style="font-size:9px;color:#5a5a6e;margin-top:2px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fab9959596bd8f83c9c9ba98968f9f9888958e9f9992d4949f8e">[email&#160;protected]</a></div></div>
+      <div style="font-size:8px;color:#4ec98a;background:rgba(78,201,138,.1);border:1px solid rgba(78,201,138,.25);padding:2px 9px;border-radius:10px;">Pro</div>
+    </div>
+    <div data-goto="s-upgrade" style="margin:0 14px 6px;background:linear-gradient(135deg,rgba(78,201,138,.08),rgba(78,201,138,.02));border:1.5px solid rgba(78,201,138,.3);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;"><div style="font-size:18px;">🍃</div><div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#4ec98a;">Upgrade to Pro</div><div style="font-size:8px;color:#5a5a6e;margin-top:2px;">Local-only · AI · Unlimited · from $4.99</div></div><div style="font-size:8px;color:#4ec98a;background:rgba(78,201,138,.1);border:1px solid rgba(78,201,138,.25);padding:2px 8px;border-radius:8px;white-space:nowrap;">one-time</div></div><div class="sec-lbl">Appearance</div>
+    <div style="margin:0 14px 6px;background:#111114;border:1px solid #2a2a35;border-radius:14px;overflow:hidden;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;cursor:pointer;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(78,201,138,.1);display:flex;align-items:center;justify-content:center;font-size:13px;">🎨</div>
+        <div style="flex:1;font-size:11px;color:#e8e8f0;">Theme</div>
+        <div style="font-size:9px;color:#5a5a6e;">Dark</div><div style="font-size:10px;color:#5a5a6e;margin-left:4px;">›</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;cursor:pointer;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(200,169,110,.1);display:flex;align-items:center;justify-content:center;font-size:13px;">🔤</div>
+        <div style="flex:1;font-size:11px;color:#e8e8f0;">Editor Font</div>
+        <div style="font-size:9px;color:#5a5a6e;">DM Mono</div><div style="font-size:10px;color:#5a5a6e;margin-left:4px;">›</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(92,143,224,.1);display:flex;align-items:center;justify-content:center;font-size:13px;">📐</div>
+        <div style="flex:1;font-size:11px;color:#e8e8f0;">Text Size</div>
+        <div style="font-size:9px;color:#5a5a6e;">Medium</div><div style="font-size:10px;color:#5a5a6e;margin-left:4px;">›</div>
+      </div>
+    </div>
+    <div class="sec-lbl">Security & Privacy</div>
+    <div style="margin:0 14px 6px;background:#111114;border:1px solid #2a2a35;border-radius:14px;overflow:hidden;flex-shrink:0;">
+      <div data-goto="s-privacy" style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;cursor:pointer;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(78,201,138,.1);display:flex;align-items:center;justify-content:center;font-size:13px;">🛡️</div>
+        <div style="flex:1;"><div style="font-size:11px;color:#e8e8f0;">Privacy</div><div style="font-size:9px;color:#5a5a6e;margin-top:1px;">Zero data mining · AES-256</div></div>
+        <div style="font-size:10px;color:#5a5a6e;">›</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(224,92,107,.1);display:flex;align-items:center;justify-content:center;font-size:13px;">🔒</div>
+        <div style="flex:1;font-size:11px;color:#e8e8f0;">Face ID Lock</div>
+        <div class="tog on"><div class="tog-k"></div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(92,143,224,.1);display:flex;align-items:center;justify-content:center;font-size:13px;">☁️</div>
+        <div style="flex:1;"><div style="font-size:11px;color:#e8e8f0;">iCloud Sync</div><div style="font-size:9px;color:#5a5a6e;margin-top:1px;">Encrypted before upload</div></div>
+        <div class="tog on"><div class="tog-k"></div></div>
+      </div>
+    </div>
+    <div class="sec-lbl">AI Features</div>
+    <div style="margin:0 14px 6px;background:#111114;border:1px solid #2a2a35;border-radius:14px;overflow:hidden;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(155,127,224,.1);display:flex;align-items:center;justify-content:center;font-size:13px;">🤖</div>
+        <div style="flex:1;"><div style="font-size:11px;color:#e8e8f0;">AI Assist</div><div style="font-size:9px;color:#5a5a6e;margin-top:1px;">On-device only</div></div>
+        <div class="tog on"><div class="tog-k"></div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(200,169,110,.1);display:flex;align-items:center;justify-content:center;font-size:13px;">🏷️</div>
+        <div style="flex:1;font-size:11px;color:#e8e8f0;">Auto-tag</div>
+        <div class="tog on"><div class="tog-k"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <div class="tab" data-goto="s-home"><div class="tab-ico">🍃</div><div class="tab-lbl">Notes</div></div>
+    <div class="tab" data-goto="s-folders"><div class="tab-ico">🗂️</div><div class="tab-lbl">Folders</div></div>
+    <div class="tab" data-goto="s-search"><div class="tab-ico">🔍</div><div class="tab-lbl">Search</div></div>
+    <div class="tab on" data-goto="s-settings"><div class="tab-ico">⚙️</div><div class="tab-lbl" style="color:#4ec98a;">Settings</div><div class="tab-pip"></div></div>
+  </div>
+</div>
+
+<!-- ▸▸▸ SCREEN: AI ASSIST ◂◂◂ -->
+<div class="scr" id="s-ai" data-name="AI Assist" data-desc="On-device AI — summarize, expand, tag and reformat">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <div class="nav">
+    <div style="display:flex;align-items:center;gap:8px;"><div class="nav-title">AI Assist</div><div style="font-size:8px;color:#4ec98a;background:rgba(78,201,138,.1);border:1px solid rgba(78,201,138,.25);padding:2px 8px;border-radius:10px;">✦ On-device</div></div>
+    <div class="nav-act" data-goto="s-detail">✕</div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:8px;overflow:hidden;">
+    <!-- context -->
+    <div style="margin:0 14px;background:#18181d;border:1px solid #2a2a35;border-radius:12px;padding:12px 14px;flex-shrink:0;">
+      <div style="font-size:8px;color:#5a5a6e;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">Current Note</div>
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#e8e8f0;">Product Strategy Q2</div>
+      <div style="font-size:9px;color:#5a5a6e;margin-top:2px;">342 words · last edited today</div>
+    </div>
+    <!-- actions -->
+    <div style="padding:0 14px;display:flex;flex-direction:column;gap:7px;flex-shrink:0;">
+      <div style="background:rgba(78,201,138,.05);border:1px solid rgba(78,201,138,.25);border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <span style="font-size:16px;">📋</span>
+        <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:#e8e8f0;margin-bottom:1px;">Summarize</div><div style="font-size:9px;color:#5a5a6e;">Generate a 3-sentence TL;DR</div></div>
+        <div style="font-size:10px;color:#5a5a6e;">›</div>
+      </div>
+      <div style="background:#111114;border:1px solid #2a2a35;border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <span style="font-size:16px;">✍️</span>
+        <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:#e8e8f0;margin-bottom:1px;">Expand</div><div style="font-size:9px;color:#5a5a6e;">Elaborate on selected text</div></div>
+        <div style="font-size:10px;color:#5a5a6e;">›</div>
+      </div>
+      <div style="background:#111114;border:1px solid #2a2a35;border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <span style="font-size:16px;">🏷️</span>
+        <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:#e8e8f0;margin-bottom:1px;">Auto-tag</div><div style="font-size:9px;color:#5a5a6e;">Suggest relevant tags</div></div>
+        <div style="font-size:10px;color:#5a5a6e;">›</div>
+      </div>
+      <div style="background:#111114;border:1px solid #2a2a35;border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <span style="font-size:16px;">🔀</span>
+        <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:#e8e8f0;margin-bottom:1px;">Reformat</div><div style="font-size:9px;color:#5a5a6e;">Restructure as bullet points</div></div>
+        <div style="font-size:10px;color:#5a5a6e;">›</div>
+      </div>
+    </div>
+    <!-- result -->
+    <div style="margin:0 14px;background:#111114;border:1px solid #2a2a35;border-radius:12px;padding:12px 14px;flex:1;overflow:hidden;">
+      <div style="font-size:8px;color:#4ec98a;letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#4ec98a;animation:blink 2s ease-in-out infinite;"></div>
+        Summary Generated
+      </div>
+      <div style="font-size:10px;color:#9090a8;line-height:1.9;">The note argues that <strong style="color:#4ec98a;font-weight:500;">retention outperforms acquisition</strong> as the primary growth lever. Key metric: DAU/MAU above 0.4. The recommended approach is building <strong style="color:#4ec98a;font-weight:500;">habit-forming systems</strong> rather than chasing new users.</div>
+    </div>
+    <!-- accept/reject -->
+    <div style="display:flex;gap:8px;padding:0 14px 14px;flex-shrink:0;">
+      <div data-goto="s-detail" style="flex:1;padding:12px;border-radius:12px;background:#4ec98a;color:#000;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;text-align:center;cursor:pointer;">Insert into Note</div>
+      <div data-goto="s-detail" style="flex:1;padding:12px;border-radius:12px;background:#18181d;border:1px solid #2a2a35;color:#9090a8;font-family:'DM Mono',monospace;font-size:10px;text-align:center;cursor:pointer;">Discard</div>
+    </div>
+  </div>
+</div>
+
+<!-- ▸▸▸ SCREEN: PRIVACY ◂◂◂ -->
+<div class="scr" id="s-privacy" data-name="Privacy" data-desc="Live status: encryption, zero collection and data controls">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <div class="nav"><div class="nav-back" data-goto="s-settings">← Settings</div><div class="nav-title">Privacy</div></div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding-bottom:80px;">
+    <div style="margin:0 14px 8px;background:linear-gradient(135deg,rgba(78,201,138,.07),rgba(78,201,138,.02));border:1px solid rgba(78,201,138,.25);border-radius:16px;padding:13px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;"><span style="font-size:17px;">🛡️</span><div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#4ec98a;">Our Privacy Promise</div></div>
+      <div style="font-size:9px;color:#9090a8;line-height:1.8;">Your notes are yours. We never read them, sell them, or use them to train AI models. Zero data mining. Full stop.</div>
+    </div>
+    <div class="sec-lbl">Status</div>
+    <div style="margin:0 14px 6px;background:#111114;border:1px solid #2a2a35;border-radius:14px;overflow:hidden;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(78,201,138,.1);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🔒</div>
+        <div style="flex:1;margin-left:2px;"><div style="font-size:11px;color:#e8e8f0;">Encryption</div><div style="font-size:8px;color:#5a5a6e;margin-top:1px;">AES-256 · Active</div></div>
+        <div style="font-size:8px;padding:2px 9px;border-radius:8px;color:#4ec98a;background:rgba(78,201,138,.1);border:1px solid rgba(78,201,138,.25);">ON</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(224,92,107,.08);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🚫</div>
+        <div style="flex:1;margin-left:2px;"><div style="font-size:11px;color:#e8e8f0;">Data Collection</div><div style="font-size:8px;color:#5a5a6e;margin-top:1px;">Analytics, ads, telemetry</div></div>
+        <div style="font-size:8px;padding:2px 9px;border-radius:8px;color:#e05c6b;background:rgba(224,92,107,.08);border:1px solid rgba(224,92,107,.2);">NONE</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(92,143,224,.1);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>
+        <div style="flex:1;margin-left:2px;"><div style="font-size:11px;color:#e8e8f0;">AI Processing</div><div style="font-size:8px;color:#5a5a6e;margin-top:1px;">On-device · Never uploaded</div></div>
+        <div style="font-size:8px;padding:2px 9px;border-radius:8px;color:#5c8fe0;background:rgba(92,143,224,.1);border:1px solid rgba(92,143,224,.2);">LOCAL</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(224,92,107,.08);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📤</div>
+        <div style="flex:1;margin-left:2px;"><div style="font-size:11px;color:#e8e8f0;">Data Sold</div><div style="font-size:8px;color:#5a5a6e;margin-top:1px;">To third parties, ever</div></div>
+        <div style="font-size:8px;padding:2px 9px;border-radius:8px;color:#e05c6b;background:rgba(224,92,107,.08);border:1px solid rgba(224,92,107,.2);">NEVER</div>
+      </div>
+    </div>
+    <div class="sec-lbl">Actions</div>
+    <div style="margin:0 14px;background:#111114;border:1px solid #2a2a35;border-radius:14px;overflow:hidden;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid #2a2a35;cursor:pointer;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(155,127,224,.1);display:flex;align-items:center;justify-content:center;font-size:13px;">📋</div>
+        <div style="flex:1;font-size:11px;color:#e8e8f0;">Privacy Policy</div>
+        <div style="font-size:10px;color:#5a5a6e;">›</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(224,92,107,.08);display:flex;align-items:center;justify-content:center;font-size:13px;">🗑️</div>
+        <div style="flex:1;font-size:11px;color:#e05c6b;">Delete All My Data</div>
+        <div style="font-size:10px;color:#5a5a6e;">›</div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <div class="tab" data-goto="s-home"><div class="tab-ico">🍃</div><div class="tab-lbl">Notes</div></div>
+    <div class="tab" data-goto="s-folders"><div class="tab-ico">🗂️</div><div class="tab-lbl">Folders</div></div>
+    <div class="tab" data-goto="s-search"><div class="tab-ico">🔍</div><div class="tab-lbl">Search</div></div>
+    <div class="tab on" data-goto="s-settings"><div class="tab-ico">⚙️</div><div class="tab-lbl" style="color:#4ec98a;">Settings</div><div class="tab-pip"></div></div>
+  </div>
+</div>
+
+<!-- ▸▸▸ SCREEN: UPGRADE — SETTINGS ENTRY ◂◂◂ -->
+<div class="scr" id="s-upgrade" data-name="Upgrade to Pro" data-desc="Triggered from Settings — full plan comparison + trust signals">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <div class="nav">
+    <div class="nav-back" data-goto="s-settings">← Settings</div>
+    <div style="font-size:8px;color:#5a5a6e;letter-spacing:.08em;">FOLIA PRO</div>
+  </div>
+
+  <!-- scrollable inner -->
+  <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 24px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none;">
+
+    <!-- ── HERO ── -->
+    <div style="text-align:center;padding:2px 0 8px;flex-shrink:0;">
+      <!-- pixel leaf -->
+      <div style="display:flex;justify-content:center;margin-bottom:8px;">
+        <svg width="44" height="60" viewBox="0 0 12 18" style="image-rendering:pixelated;" fill="none">
+          <rect x="6" y="0" width="1" height="1" fill="#5cb8d0"/><rect x="5" y="1" width="1" height="1" fill="#5cb8d0"/><rect x="6" y="1" width="1" height="1" fill="#4ec98a"/><rect x="7" y="1" width="1" height="1" fill="#5cb8d0"/><rect x="4" y="2" width="1" height="1" fill="#2a6a80"/><rect x="5" y="2" width="1" height="1" fill="#2a7a52"/><rect x="6" y="2" width="1" height="1" fill="#7edba8"/><rect x="7" y="2" width="1" height="1" fill="#4ec98a"/><rect x="8" y="2" width="1" height="1" fill="#5cb8d0"/><rect x="3" y="3" width="1" height="1" fill="#2a6a80"/><rect x="4" y="3" width="1" height="1" fill="#1a4a2e"/><rect x="5" y="3" width="1" height="1" fill="#4ec98a"/><rect x="6" y="3" width="1" height="1" fill="#c8a96e"/><rect x="7" y="3" width="1" height="1" fill="#7edba8"/><rect x="8" y="3" width="1" height="1" fill="#4ec98a"/><rect x="9" y="3" width="1" height="1" fill="#5cb8d0"/><rect x="2" y="4" width="1" height="1" fill="#2a6a80"/><rect x="3" y="4" width="1" height="1" fill="#1a4a2e"/><rect x="4" y="4" width="1" height="1" fill="#2a7a52"/><rect x="5" y="4" width="1" height="1" fill="#4ec98a"/><rect x="6" y="4" width="1" height="1" fill="#c8a96e"/><rect x="7" y="4" width="1" height="1" fill="#4ec98a"/><rect x="8" y="4" width="1" height="1" fill="#7edba8"/><rect x="9" y="4" width="1" height="1" fill="#4ec98a"/><rect x="10" y="4" width="1" height="1" fill="#5cb8d0"/><rect x="5" y="9" width="1" height="1" fill="#2a6a80"/><rect x="6" y="9" width="1" height="1" fill="#c8a96e"/><rect x="6" y="11" width="1" height="1" fill="#c8a96e"/><rect x="5" y="12" width="1" height="1" fill="#c8a96e"/><rect x="4" y="13" width="1" height="1" fill="#c8a96e"/><rect x="3" y="14" width="1" height="1" fill="#c8a96e"/><rect x="2" y="15" width="1" height="1" fill="#c8a96e"/>
+        </svg>
+      </div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:#e8e8f0;line-height:1.15;margin-bottom:5px;">Unlock <em style="color:#4ec98a;font-style:italic;">Folia Pro</em></div>
+      <!-- NO SUBSCRIPTION pill -->
+      <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.3);border-radius:20px;padding:4px 12px;">
+        <span style="font-size:10px;">✦</span>
+        <span style="font-size:8px;color:#c8a96e;letter-spacing:.1em;font-weight:500;">ONE-TIME PAYMENT · NO SUBSCRIPTION EVER</span>
+      </div>
+    </div>
+
+    <!-- ── FLAGSHIP FEATURE: LOCAL-ONLY ── -->
+    <div style="background:linear-gradient(135deg,rgba(78,201,138,.1) 0%,rgba(78,201,138,.03) 100%);border:1.5px solid rgba(78,201,138,.4);border-radius:18px;padding:15px;flex-shrink:0;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;right:0;width:80px;height:80px;background:radial-gradient(circle,rgba(78,201,138,.12) 0%,transparent 70%);pointer-events:none;"></div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px;">
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(78,201,138,.15);border:1px solid rgba(78,201,138,.3);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">🔒</div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#4ec98a;">Local-Only Mode</div>
+          <div style="font-size:8px;color:#5a5a6e;margin-top:1px;">The flagship Pro feature</div>
+        </div>
+        <div style="margin-left:auto;font-size:8px;color:#4ec98a;background:rgba(78,201,138,.12);border:1px solid rgba(78,201,138,.25);padding:2px 8px;border-radius:8px;white-space:nowrap;">Pro only</div>
+      </div>
+      <div style="font-size:9px;color:#9090a8;line-height:1.85;">Enable this and your notes <strong style="color:#e8e8f0;font-weight:500;">never leave your device.</strong> No cloud. No server. No sync. Your thoughts stay entirely yours — encrypted on-device, invisible to the world.</div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+        <div style="font-size:8px;color:#4ec98a;background:rgba(78,201,138,.08);border:1px solid rgba(78,201,138,.2);padding:3px 9px;border-radius:8px;">AES-256 on-device</div>
+        <div style="font-size:8px;color:#4ec98a;background:rgba(78,201,138,.08);border:1px solid rgba(78,201,138,.2);padding:3px 9px;border-radius:8px;">Zero data mining</div>
+        <div style="font-size:8px;color:#4ec98a;background:rgba(78,201,138,.08);border:1px solid rgba(78,201,138,.2);padding:3px 9px;border-radius:8px;">Toggle anytime</div>
+      </div>
+    </div>
+
+    <!-- ── COMPARISON TABLE ── -->
+    <div style="flex-shrink:0;">
+      <div style="font-size:9px;color:#5a5a6e;letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;">Compare Plans</div>
+      <!-- table header -->
+      <div style="display:grid;grid-template-columns:1fr 72px 72px;gap:0;background:#111114;border:1px solid #2a2a35;border-radius:14px;overflow:hidden;">
+        <div style="padding:9px 11px;border-bottom:1px solid #2a2a35;"></div>
+        <div style="padding:9px 0;border-bottom:1px solid #2a2a35;border-left:1px solid #2a2a35;text-align:center;">
+          <div style="font-family:'Syne',sans-serif;font-size:8px;font-weight:700;color:#e8e8f0;">iOS</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:13px;color:#4ec98a;font-weight:300;">$4.99</div>
+        </div>
+        <div style="padding:9px 0;border-bottom:1px solid #2a2a35;border-left:1px solid #2a2a35;text-align:center;background:rgba(92,143,224,.04);">
+          <div style="font-family:'Syne',sans-serif;font-size:8px;font-weight:700;color:#e8e8f0;">iOS+Web</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:13px;color:#5c8fe0;font-weight:300;">$9.99</div>
+        </div>
+        <!-- row: unlimited notes -->
+        <div style="padding:8px 11px;border-bottom:1px solid #2a2a35;font-size:9px;color:#9090a8;display:flex;align-items:center;gap:5px;"><span style="font-size:11px;">📝</span>Unlimited notes</div>
+        <div style="border-bottom:1px solid #2a2a35;border-left:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4ec98a;">✓</div>
+        <div style="border-bottom:1px solid #2a2a35;border-left:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4ec98a;background:rgba(92,143,224,.04);">✓</div>
+        <!-- row: local-only -->
+        <div style="padding:8px 11px;border-bottom:1px solid #2a2a35;font-size:9px;color:#e8e8f0;font-weight:500;display:flex;align-items:center;gap:5px;"><span style="font-size:11px;">🔒</span>Local-only mode</div>
+        <div style="border-bottom:1px solid #2a2a35;border-left:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4ec98a;">✓</div>
+        <div style="border-bottom:1px solid #2a2a35;border-left:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4ec98a;background:rgba(92,143,224,.04);">✓</div>
+        <!-- row: AI assist -->
+        <div style="padding:8px 11px;border-bottom:1px solid #2a2a35;font-size:9px;color:#9090a8;display:flex;align-items:center;gap:5px;"><span style="font-size:11px;">✨</span>AI Assist</div>
+        <div style="border-bottom:1px solid #2a2a35;border-left:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4ec98a;">✓</div>
+        <div style="border-bottom:1px solid #2a2a35;border-left:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4ec98a;background:rgba(92,143,224,.04);">✓</div>
+        <!-- row: unlimited folders -->
+        <div style="padding:8px 11px;border-bottom:1px solid #2a2a35;font-size:9px;color:#9090a8;display:flex;align-items:center;gap:5px;"><span style="font-size:11px;">🗂️</span>Unlimited folders</div>
+        <div style="border-bottom:1px solid #2a2a35;border-left:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4ec98a;">✓</div>
+        <div style="border-bottom:1px solid #2a2a35;border-left:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4ec98a;background:rgba(92,143,224,.04);">✓</div>
+        <!-- row: browser app -->
+        <div style="padding:8px 11px;font-size:9px;color:#9090a8;display:flex;align-items:center;gap:5px;"><span style="font-size:11px;">🌐</span>Browser web app</div>
+        <div style="border-left:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:13px;color:#5a5a6e;">—</div>
+        <div style="border-left:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4ec98a;background:rgba(92,143,224,.04);">✓</div>
+      </div>
+    </div>
+
+    <!-- ── CTA BUTTONS ── -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
+      <div style="background:rgba(78,201,138,.06);border:1.5px solid rgba(78,201,138,.4);border-radius:16px;padding:13px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:9px;right:10px;font-size:7px;color:#4ec98a;background:rgba(78,201,138,.12);border:1px solid rgba(78,201,138,.25);padding:2px 7px;border-radius:8px;letter-spacing:.08em;">MOST POPULAR</div>
+        <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#e8e8f0;margin-bottom:1px;">Pro — iOS</div>
+        <div style="font-size:8px;color:#5a5a6e;margin-bottom:10px;">Unlimited notes · Local-only · AI · All folders</div>
+        <div class="btn-primary" style="font-size:11px;padding:12px;">Get Pro iOS &nbsp;·&nbsp; $4.99 one-time</div>
+      </div>
+      <div style="background:#111114;border:1px solid #2a2a35;border-radius:16px;padding:13px;">
+        <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#e8e8f0;margin-bottom:1px;">Pro — iOS + Browser</div>
+        <div style="font-size:8px;color:#5a5a6e;margin-bottom:10px;">Everything above plus the Folia web app</div>
+        <div class="btn-ghost" style="font-size:11px;padding:12px;border-color:#5c8fe0;color:#5c8fe0;">Get Pro Complete &nbsp;·&nbsp; $9.99 one-time</div>
+      </div>
+    </div>
+
+    <!-- ── TESTIMONIALS ── -->
+    <div style="flex-shrink:0;">
+      <div style="font-size:9px;color:#5a5a6e;letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;">What people are saying</div>
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <div style="background:#111114;border:1px solid #2a2a35;border-radius:13px;padding:11px 13px;">
+          <div style="font-size:9px;color:#9090a8;line-height:1.8;margin-bottom:6px;font-style:italic;">"Finally a notes app that doesn't make me feel like I'm being watched. Local-only mode is the whole reason I switched."</div>
+          <div style="display:flex;align-items:center;gap:7px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#4ec98a,#2a7a52);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000;">J</div>
+            <div><div style="font-size:8px;color:#e8e8f0;font-weight:500;">@jaxwrites</div><div style="font-size:7px;color:#5a5a6e;">Pro iOS user</div></div>
+            <div style="margin-left:auto;font-size:9px;color:#c8a96e;">★★★★★</div>
+          </div>
+        </div>
+        <div style="background:#111114;border:1px solid #2a2a35;border-radius:13px;padding:11px 13px;">
+          <div style="font-size:9px;color:#9090a8;line-height:1.8;margin-bottom:6px;font-style:italic;">"$4.99 one-time and I own it forever? Sold immediately. The AI summary feature alone is worth it."</div>
+          <div style="display:flex;align-items:center;gap:7px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#9b7fe0,#5c8fe0);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;">M</div>
+            <div><div style="font-size:8px;color:#e8e8f0;font-weight:500;">@mika.notes</div><div style="font-size:7px;color:#5a5a6e;">Pro Complete user</div></div>
+            <div style="margin-left:auto;font-size:9px;color:#c8a96e;">★★★★★</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TRUST FOOTER ── -->
+    <div style="background:#111114;border:1px solid #2a2a35;border-radius:13px;padding:11px 13px;flex-shrink:0;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="display:flex;align-items:flex-start;gap:6px;">
+          <span style="font-size:13px;flex-shrink:0;">🔒</span>
+          <div><div style="font-size:8px;color:#e8e8f0;font-weight:500;margin-bottom:1px;">Secure payment</div><div style="font-size:7px;color:#5a5a6e;line-height:1.6;">Via App Store. Apple handles billing.</div></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:6px;">
+          <span style="font-size:13px;flex-shrink:0;">♾️</span>
+          <div><div style="font-size:8px;color:#e8e8f0;font-weight:500;margin-bottom:1px;">Yours forever</div><div style="font-size:7px;color:#5a5a6e;line-height:1.6;">No renewal. No expiry. Ever.</div></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:6px;">
+          <span style="font-size:13px;flex-shrink:0;">📱</span>
+          <div><div style="font-size:8px;color:#e8e8f0;font-weight:500;margin-bottom:1px;">Restore purchase</div><div style="font-size:7px;color:#5a5a6e;line-height:1.6;">New phone? Restore in one tap.</div></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:6px;">
+          <span style="font-size:13px;flex-shrink:0;">🙋</span>
+          <div><div style="font-size:8px;color:#e8e8f0;font-weight:500;margin-bottom:1px;">Support</div><div style="font-size:7px;color:#5a5a6e;line-height:1.6;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e79d858b9282a7858b92828595889382848fc9898293">[email&#160;protected]</a></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BlueBroTech brand -->
+    <div style="text-align:center;padding:4px 0 0;flex-shrink:0;">
+      <div style="font-size:7px;color:#2a2a35;letter-spacing:.15em;text-transform:uppercase;">BlueBroTech, LLC · Made with care</div>
+      <div style="font-size:7px;color:#2a2a35;margin-top:2px;">Android coming soon · $14.99 all platforms</div>
+    </div>
+
+  </div><!-- /scroll -->
+</div>
+
+<!-- ▸▸▸ SCREEN: UPGRADE — FEATURE GATE (triggered by trying to use Pro feature) ◂◂◂ -->
+<div class="scr" id="s-gate" data-name="Pro Feature Gate" data-desc="Shown when a free user taps a Pro-only feature">
+  <div class="sb"><span class="sb-time">9:41</span><span class="sb-right">🔋</span></div>
+  <!-- close bar -->
+  <div style="display:flex;justify-content:flex-end;padding:4px 18px 0;flex-shrink:0;">
+    <div data-goto="s-home" style="width:28px;height:28px;border-radius:50%;background:#18181d;border:1px solid #2a2a35;display:flex;align-items:center;justify-content:center;font-size:12px;color:#9090a8;cursor:pointer;">✕</div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24px 24px;text-align:center;gap:0;">
+    <!-- icon -->
+    <div style="width:68px;height:68px;border-radius:22px;background:linear-gradient(135deg,rgba(78,201,138,.14),rgba(78,201,138,.04));border:1px solid rgba(78,201,138,.3);display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:16px;box-shadow:0 12px 32px rgba(0,0,0,.5);">🔒</div>
+    <!-- context label -->
+    <div style="font-size:8px;color:#c8a96e;letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px;background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2);padding:3px 12px;border-radius:10px;">Pro Feature</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:#e8e8f0;line-height:1.2;margin-bottom:8px;">Local-Only Mode<br><em style="color:#4ec98a;font-style:italic;">requires Pro</em></div>
+    <div style="font-size:9px;color:#5a5a6e;line-height:1.85;margin-bottom:22px;">Keep your notes entirely off the cloud. Nothing syncs. Nothing leaves your device. Your thoughts stay invisible — even to us.</div>
+    <!-- one-time callout -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:18px;background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2);border-radius:12px;padding:8px 14px;">
+      <span style="font-size:12px;">✦</span>
+      <div style="font-size:8px;color:#c8a96e;line-height:1.7;text-align:left;"><strong style="font-weight:500;">One-time payment. No subscription.</strong><br>Pay once, own it forever.</div>
+    </div>
+    <!-- CTAs -->
+    <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
+      <div class="btn-primary" data-goto="s-upgrade" style="font-size:11px;">Unlock Pro — from $4.99</div>
+      <div data-goto="s-home" style="font-size:10px;color:#5a5a6e;padding:8px;cursor:pointer;text-align:center;">Not now</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /phone -->
+
+<!-- ── PAGE FOOTER ── -->
+<div class="page-footer">
+  <span>13 screens</span> · Click anything to navigate · Download and open in Chrome for best experience<br>
+  Built by BlueBroTech, LLC · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="166c747a637356747a63737464796273757e38787362">[email&#160;protected]</a>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const SCREENS = [
+  's-lock','s-ob1','s-ob2','s-ob3',
+  's-home','s-detail','s-search','s-folders',
+  's-settings','s-ai','s-privacy','s-upgrade','s-gate'
+];
+let current = 's-ob1';
+
+// Build nav dots
+function buildDots() {
+  const wrap = document.getElementById('dots');
+  wrap.innerHTML = '';
+  SCREENS.forEach(id => {
+    const b = document.createElement('button');
+    b.className = 'dot' + (id === current ? ' on' : '');
+    b.title = document.getElementById(id)?.dataset.name || id;
+    b.dataset.goto = id;
+    wrap.appendChild(b);
+  });
+}
+
+// Update header text
+function updateHeader() {
+  const el = document.getElementById(current);
+  document.getElementById('scr-name').textContent = el?.dataset.name || '';
+  document.getElementById('scr-desc').textContent = el?.dataset.desc || '';
+}
+
+// Navigate
+function goTo(id) {
+  if (!id || id === current) return;
+  const next = document.getElementById(id);
+  if (!next) return;
+  document.getElementById(current)?.classList.remove('on');
+  next.classList.add('on');
+  current = id;
+  buildDots();
+  updateHeader();
+}
+
+// Single delegated listener on entire document
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-goto]');
+  if (el) {
+    e.preventDefault();
+    goTo(el.getAttribute('data-goto'));
+  }
+});
+
+// Init
+document.getElementById('s-ob1').classList.add('on');
+buildDots();
+updateHeader();
+</script>
+</body>
+</html>
