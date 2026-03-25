@@ -155,6 +155,75 @@ body::after{
 /* ── FOOTER INFO ── */
 .page-footer{margin-top:16px;font-size:8px;color:#5a5a6e;letter-spacing:.1em;text-align:center;line-height:2;}
 .page-footer span{color:#4ec98a;}
+
+/* ── SPLASH SCREEN ── */
+#s-splash {
+  background: #0a0a0b;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.splash-glow {
+  position: absolute;
+  width: 260px; height: 260px;
+  border-radius: 50%;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: glowCycle 6s ease-in-out infinite;
+  pointer-events: none;
+  filter: blur(40px);
+}
+@keyframes glowCycle {
+  0%   { background: radial-gradient(circle, rgba(78,201,138,.22) 0%, transparent 70%);  transform: translate(-50%,-50%) scale(1);    }
+  16%  { background: radial-gradient(circle, rgba(120,180,255,.18) 0%, transparent 70%);  transform: translate(-50%,-50%) scale(1.12); }
+  33%  { background: radial-gradient(circle, rgba(200,150,255,.18) 0%, transparent 70%);  transform: translate(-50%,-50%) scale(1.06); }
+  50%  { background: radial-gradient(circle, rgba(255,180,120,.16) 0%, transparent 70%);  transform: translate(-50%,-50%) scale(1.14); }
+  66%  { background: radial-gradient(circle, rgba(120,220,200,.18) 0%, transparent 70%);  transform: translate(-50%,-50%) scale(1.05); }
+  83%  { background: radial-gradient(circle, rgba(180,140,255,.17) 0%, transparent 70%);  transform: translate(-50%,-50%) scale(1.10); }
+  100% { background: radial-gradient(circle, rgba(78,201,138,.22) 0%, transparent 70%);   transform: translate(-50%,-50%) scale(1);    }
+}
+.splash-leaf-wrap {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+}
+.splash-leaf {
+  animation: leafBreathe 5s ease-in-out infinite,
+             leafHue     8s linear infinite;
+  filter: brightness(1.05) saturate(0.75);
+  transform-origin: center;
+}
+@keyframes leafBreathe {
+  0%,100% { transform: scale(1);    }
+  50%     { transform: scale(1.10); }
+}
+@keyframes leafHue {
+  0%   { filter: hue-rotate(0deg)   brightness(1.08) saturate(0.70); }
+  15%  { filter: hue-rotate(40deg)  brightness(1.12) saturate(0.65); }
+  30%  { filter: hue-rotate(100deg) brightness(1.10) saturate(0.60); }
+  45%  { filter: hue-rotate(170deg) brightness(1.12) saturate(0.62); }
+  60%  { filter: hue-rotate(230deg) brightness(1.08) saturate(0.65); }
+  75%  { filter: hue-rotate(290deg) brightness(1.12) saturate(0.63); }
+  90%  { filter: hue-rotate(340deg) brightness(1.10) saturate(0.68); }
+  100% { filter: hue-rotate(360deg) brightness(1.08) saturate(0.70); }
+}
+.splash-wordmark {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px; font-weight: 300;
+  font-style: italic; color: #e8e8f0;
+  letter-spacing: .04em; line-height: 1;
+  animation: wordmarkFade 5s ease-in-out infinite;
+  position: relative; z-index: 2;
+}
+@keyframes wordmarkFade {
+  0%,100% { opacity: .75; }
+  50%     { opacity: 1;   }
+}
+.splash-sub {
+  font-size: 8px; color: #2a2a35;
+  letter-spacing: .22em; text-transform: uppercase;
+  position: relative; z-index: 2;
+  animation: wordmarkFade 5s ease-in-out infinite;
+}
 </style>
 </head>
 <body>
@@ -164,7 +233,7 @@ body::after{
   <div class="hdr-brand"><em>Folia</em></div>
   <div class="hdr-tag">Interactive Prototype &nbsp;·&nbsp; BlueBroTech, LLC</div>
   <div class="hdr-screen" id="scr-name">Lock Screen</div>
-  <div class="hdr-desc" id="scr-desc">Face ID gate — shown on app launch</div>
+  <div class="hdr-desc" id="scr-desc">Branded launch moment — tap to skip, auto-advances in 2.8s</div>
 </div>
 
 <!-- ── DOT NAV ── -->
@@ -172,6 +241,117 @@ body::after{
 
 <!-- ── PHONE ── -->
 <div class="phone" id="phone">
+
+
+<!-- ▸▸▸ SCREEN: SPLASH ◂◂◂ -->
+<div class="scr" id="s-splash"
+  data-name="Splash Screen"
+  data-desc="Branded launch moment — auto-advances to Lock Screen in 2.5s"
+  data-goto="s-lock">
+
+  <!-- animated pastel glow -->
+  <div class="splash-glow"></div>
+
+  <!-- leaf + wordmark -->
+  <div class="splash-leaf-wrap">
+    <svg class="splash-leaf" width="110" height="150"
+      viewBox="0 0 12 18" style="image-rendering:pixelated;" fill="none">
+      <rect x="6" y="0" width="1" height="1" fill="#5cb8d0"/>
+      <rect x="5" y="1" width="1" height="1" fill="#5cb8d0"/>
+      <rect x="6" y="1" width="1" height="1" fill="#4ec98a"/>
+      <rect x="7" y="1" width="1" height="1" fill="#5cb8d0"/>
+      <rect x="4" y="2" width="1" height="1" fill="#2a6a80"/>
+      <rect x="5" y="2" width="1" height="1" fill="#2a7a52"/>
+      <rect x="6" y="2" width="1" height="1" fill="#7edba8"/>
+      <rect x="7" y="2" width="1" height="1" fill="#4ec98a"/>
+      <rect x="8" y="2" width="1" height="1" fill="#5cb8d0"/>
+      <rect x="3" y="3" width="1" height="1" fill="#2a6a80"/>
+      <rect x="4" y="3" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="5" y="3" width="1" height="1" fill="#4ec98a"/>
+      <rect x="6" y="3" width="1" height="1" fill="#c8a96e"/>
+      <rect x="7" y="3" width="1" height="1" fill="#7edba8"/>
+      <rect x="8" y="3" width="1" height="1" fill="#4ec98a"/>
+      <rect x="9" y="3" width="1" height="1" fill="#5cb8d0"/>
+      <rect x="2" y="4" width="1" height="1" fill="#2a6a80"/>
+      <rect x="3" y="4" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="4" y="4" width="1" height="1" fill="#2a7a52"/>
+      <rect x="5" y="4" width="1" height="1" fill="#4ec98a"/>
+      <rect x="6" y="4" width="1" height="1" fill="#c8a96e"/>
+      <rect x="7" y="4" width="1" height="1" fill="#4ec98a"/>
+      <rect x="8" y="4" width="1" height="1" fill="#7edba8"/>
+      <rect x="9" y="4" width="1" height="1" fill="#4ec98a"/>
+      <rect x="10" y="4" width="1" height="1" fill="#5cb8d0"/>
+      <rect x="1" y="5" width="1" height="1" fill="#2a6a80"/>
+      <rect x="2" y="5" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="3" y="5" width="1" height="1" fill="#2a7a52"/>
+      <rect x="4" y="5" width="1" height="1" fill="#4ec98a"/>
+      <rect x="5" y="5" width="1" height="1" fill="#7edba8"/>
+      <rect x="6" y="5" width="1" height="1" fill="#c8a96e"/>
+      <rect x="7" y="5" width="1" height="1" fill="#4ec98a"/>
+      <rect x="8" y="5" width="1" height="1" fill="#4ec98a"/>
+      <rect x="9" y="5" width="1" height="1" fill="#4ec98a"/>
+      <rect x="10" y="5" width="1" height="1" fill="#2a7a52"/>
+      <rect x="11" y="5" width="1" height="1" fill="#2a6a80"/>
+      <rect x="0" y="6" width="1" height="1" fill="#2a6a80"/>
+      <rect x="1" y="6" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="2" y="6" width="1" height="1" fill="#2a7a52"/>
+      <rect x="3" y="6" width="1" height="1" fill="#4ec98a"/>
+      <rect x="4" y="6" width="1" height="1" fill="#7edba8"/>
+      <rect x="5" y="6" width="1" height="1" fill="#4ec98a"/>
+      <rect x="6" y="6" width="1" height="1" fill="#c8a96e"/>
+      <rect x="7" y="6" width="1" height="1" fill="#4ec98a"/>
+      <rect x="8" y="6" width="1" height="1" fill="#7edba8"/>
+      <rect x="9" y="6" width="1" height="1" fill="#4ec98a"/>
+      <rect x="10" y="6" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="1" y="7" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="2" y="7" width="1" height="1" fill="#2a7a52"/>
+      <rect x="3" y="7" width="1" height="1" fill="#4ec98a"/>
+      <rect x="4" y="7" width="1" height="1" fill="#7edba8"/>
+      <rect x="5" y="7" width="1" height="1" fill="#4ec98a"/>
+      <rect x="6" y="7" width="1" height="1" fill="#c8a96e"/>
+      <rect x="7" y="7" width="1" height="1" fill="#7edba8"/>
+      <rect x="8" y="7" width="1" height="1" fill="#4ec98a"/>
+      <rect x="9" y="7" width="1" height="1" fill="#2a7a52"/>
+      <rect x="10" y="7" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="2" y="8" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="3" y="8" width="1" height="1" fill="#2a7a52"/>
+      <rect x="4" y="8" width="1" height="1" fill="#4ec98a"/>
+      <rect x="5" y="8" width="1" height="1" fill="#7edba8"/>
+      <rect x="6" y="8" width="1" height="1" fill="#c8a96e"/>
+      <rect x="7" y="8" width="1" height="1" fill="#4ec98a"/>
+      <rect x="8" y="8" width="1" height="1" fill="#7edba8"/>
+      <rect x="9" y="8" width="1" height="1" fill="#4ec98a"/>
+      <rect x="10" y="8" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="3" y="9" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="4" y="9" width="1" height="1" fill="#2a7a52"/>
+      <rect x="5" y="9" width="1" height="1" fill="#4ec98a"/>
+      <rect x="6" y="9" width="1" height="1" fill="#c8a96e"/>
+      <rect x="7" y="9" width="1" height="1" fill="#7edba8"/>
+      <rect x="8" y="9" width="1" height="1" fill="#4ec98a"/>
+      <rect x="9" y="9" width="1" height="1" fill="#2a7a52"/>
+      <rect x="4" y="10" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="5" y="10" width="1" height="1" fill="#2a7a52"/>
+      <rect x="6" y="10" width="1" height="1" fill="#c8a96e"/>
+      <rect x="7" y="10" width="1" height="1" fill="#4ec98a"/>
+      <rect x="8" y="10" width="1" height="1" fill="#2a7a52"/>
+      <rect x="5" y="11" width="1" height="1" fill="#2a6a80"/>
+      <rect x="6" y="11" width="1" height="1" fill="#c8a96e"/>
+      <rect x="7" y="11" width="1" height="1" fill="#2a7a52"/>
+      <rect x="6" y="12" width="1" height="1" fill="#c8a96e"/>
+      <rect x="5" y="13" width="1" height="1" fill="#c8a96e"/>
+      <rect x="6" y="13" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="4" y="14" width="1" height="1" fill="#c8a96e"/>
+      <rect x="5" y="14" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="3" y="15" width="1" height="1" fill="#c8a96e"/>
+      <rect x="4" y="15" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="2" y="16" width="1" height="1" fill="#c8a96e"/>
+      <rect x="3" y="16" width="1" height="1" fill="#1a4a2e"/>
+      <rect x="1" y="17" width="1" height="1" fill="#c8a96e"/>
+    </svg>
+    <div class="splash-wordmark">Folia</div>
+    <div class="splash-sub">BlueBroTech, LLC</div>
+  </div>
+</div>
 
 <!-- ▸▸▸ SCREEN: LOCK ◂◂◂ -->
 <div class="scr" id="s-lock" data-name="Lock Screen" data-desc="Face ID gate — shown on app launch">
@@ -878,17 +1058,17 @@ body::after{
 
 <!-- ── PAGE FOOTER ── -->
 <div class="page-footer">
-  <span>13 screens</span> · Click anything to navigate · Download and open in Chrome for best experience<br>
+  <span>14 screens</span> · Click anything to navigate · Download and open in Chrome for best experience<br>
   Built by BlueBroTech, LLC · <span>zblue&#64;bluebrotech&#46;net</span>
 </div>
 
 <script>
 const SCREENS = [
-  's-lock','s-ob1','s-ob2','s-ob3',
+  's-splash','s-lock','s-ob1','s-ob2','s-ob3',
   's-home','s-detail','s-search','s-folders',
   's-settings','s-ai','s-privacy','s-upgrade','s-gate'
 ];
-let current = 's-ob1';
+let current = 's-splash';
 
 // Build nav dots
 function buildDots() {
@@ -932,9 +1112,14 @@ document.addEventListener('click', function(e) {
 });
 
 // Init
-document.getElementById('s-ob1').classList.add('on');
+document.getElementById('s-splash').classList.add('on');
 buildDots();
 updateHeader();
+
+// Auto-advance splash → lock after 2.8s
+setTimeout(() => {
+  if (current === 's-splash') goTo('s-lock');
+}, 2800);
 </script>
 </body>
 </html>
